@@ -1,0 +1,41 @@
+---
+- name: Configure and Deploy DeployFlow Enterprise Portal
+  hosts: webservers
+  gather_facts: no
+
+  tasks:
+    - name: Bootstrap Python, Node.js, npm, and procps on Ubuntu container
+      raw: apt-get -o Acquire::ForceIPv4=true update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends python3 nodejs npm procps
+
+    - name: Create application directory
+      file:
+        path: /opt/deployflow
+        state: directory
+        mode: '0755'
+
+    - name: Copy backend files to target server
+      copy:
+        src: "{{ item }}"
+        dest: /opt/deployflow/
+      loop:
+        - ../app/package.json
+        - ../app/server.js
+
+    - name: Copy frontend public assets to target server
+      copy:
+        src: ../app/public
+        dest: /opt/deployflow/
+
+    - name: Install Node.js dependencies
+      shell: npm config set strict-ssl false && npm install --omit=dev
+      args:
+        chdir: /opt/deployflow
+
+    - name: Start DeployFlow Node.js server in background
+      shell: |
+        pkill -x node || true
+        nohup node server.js </dev/null >/var/log/deployflow.log 2>&1 &
+        sleep 2
+        pgrep -x node
+      args:
+        chdir: /opt/deployflow 
