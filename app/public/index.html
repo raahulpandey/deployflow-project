@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeployFlow Enterprise | Cloud Infrastructure & DevOps Console</title>
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: #111827;
+      --bg-elevated: #182235;
+      --border: #1f2d47;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --sidebar-w: 250px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; bottom: 0; left: 0;
+      z-index: 40;
+      transition: transform 0.25s ease;
+    }
+    .brand {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-logo {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 1rem; color: #fff;
+    }
+    .brand-text h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-text span { font-size: 0.72rem; color: var(--text-secondary); display: block; }
+
+    .nav-section { padding: 1rem 0.75rem; flex: 1; }
+    .nav-label {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); padding: 0 0.75rem 0.5rem; font-weight: 600;
+    }
+    .nav-item {
+      width: 100%; display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.75rem; margin-bottom: 0.25rem;
+      border-radius: 8px; border: none; background: transparent;
+      color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; text-align: left; transition: all 0.15s;
+    }
+    .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .nav-item.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; }
+
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+    .env-pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      padding: 0.3rem 0.6rem; border-radius: 6px; margin-top: 0.4rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.74rem;
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      margin-left: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 64px;
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 30;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 1rem; }
+    .menu-btn {
+      display: none; background: var(--bg-elevated); border: 1px solid var(--border);
+      color: var(--text-primary); padding: 0.45rem 0.65rem; border-radius: 6px; cursor: pointer;
+    }
+    .breadcrumb { font-size: 0.9rem; color: var(--text-secondary); }
+    .breadcrumb strong { color: var(--text-primary); }
+
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.35rem 0.75rem; border-radius: 999px;
+      background: var(--success-bg); color: var(--success);
+      font-size: 0.78rem; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .pulse {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+      70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.5rem 0.95rem; border-radius: 8px; font-size: 0.83rem; font-weight: 600;
+      cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary); }
+    .btn-outline:hover { border-color: #3b82f6; }
+    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+
+    /* Container */
+    .content { padding: 1.5rem; max-width: 1360px; width: 100%; margin: 0 auto; }
+
+    .page-header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .page-header h2 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+    .page-header p { font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    .header-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+    }
+    .kpi-title { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; }
+    .kpi-value { font-size: 1.65rem; font-weight: 700; margin: 0.5rem 0 0.35rem; letter-spacing: -0.02em; }
+    .kpi-sub { font-size: 0.78rem; color: var(--text-muted); }
+    .progress-track {
+      width: 100%; height: 6px; background: var(--bg-elevated);
+      border-radius: 999px; overflow: hidden; margin-top: 0.65rem;
+    }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+
+    /* Pipeline Banner */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stage-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem;
+      position: relative;
+    }
+    .stage-tag {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #60a5fa; margin-bottom: 0.35rem;
+    }
+    .stage-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+    .stage-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; }
+
+    /* Two-column layout */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+    }
+    .card-header h3 { font-size: 1rem; font-weight: 600; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th {
+      text-align: left; padding: 0.65rem 0.75rem; color: var(--text-muted);
+      font-weight: 600; font-size: 0.75rem; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.8rem 0.75rem; border-bottom: 1px solid rgba(31, 45, 71, 0.55); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.22rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-healthy { background: var(--success-bg); color: var(--success); }
+    .badge-degraded { background: var(--warning-bg); color: var(--warning); }
+
+    /* Audit Logs */
+    .log-list { display: flex; flex-direction: column; gap: 0.65rem; max-height: 360px; overflow-y: auto; }
+    .log-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+    }
+    .log-meta {
+      display: flex; justify-content: space-between; color: var(--text-muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; margin-bottom: 0.3rem;
+    }
+    .log-actor { color: #60a5fa; font-weight: 600; }
+    .log-msg { color: var(--text-primary); line-height: 1.4; }
+
+    /* Host Spec Bar */
+    .spec-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem; margin-top: 1.25rem;
+    }
+    .spec-box {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem;
+    }
+    .spec-box span { display: block; font-size: 0.72rem; color: var(--text-muted); }
+    .spec-box strong { font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 0.2rem; display: block; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: var(--bg-elevated); border: 1px solid var(--accent);
+      color: var(--text-primary); padding: 0.8rem 1.1rem; border-radius: 10px;
+      font-size: 0.84rem; box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+      transform: translateY(120%); opacity: 0; transition: all 0.25s ease; z-index: 60;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      display: none; place-items: center; z-index: 50; padding: 1rem;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: 12px; max-width: 520px; width: 100%; padding: 1.35rem;
+    }
+    .modal pre {
+      background: var(--bg-base); border: 1px solid var(--border);
+      padding: 0.9rem; border-radius: 8px; overflow-x: auto;
+      font-size: 0.8rem; color: #34d399; margin: 0.85rem 0;
+    }
+
+    /* Responsive */
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35;
+    }
+    @media (max-width: 960px) {
+      .split-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.open { display: block; }
+      .main { margin-left: 0; }
+      .menu-btn { display: inline-flex; }
+      .topbar { padding: 0 1rem; }
+      .content { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">DF</div>
+      <div class="brand-text">
+        <h1>DeployFlow</h1>
+        <span>Enterprise Ops Console</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Platform</div>
+      <button class="nav-item active" onclick="filterView('all', this)">Overview Dashboard</button>
+      <button class="nav-item" onclick="filterView('services', this)">Microservices &amp; Nodes</button>
+      <button class="nav-item" onclick="filterView('pipeline', this)">IaC &amp; Automation Stack</button>
+      <button class="nav-item" onclick="filterView('logs', this)">Audit &amp; Event Stream</button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div>Provisioned Cluster</div>
+      <div class="env-pill">docker://deployflow-server</div>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="breadcrumb">Production / <strong>wsl-local-cluster</strong></div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-badge" id="healthBadge">
+          <span class="pulse"></span>
+          <span id="healthText">NAGIOS PROBE: OK</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-header">
+        <div>
+          <h2>Infrastructure &amp; Deployment Control</h2>
+          <p>Automated container lifecycle managed via Terraform, Ansible, and Nagios Core.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="inspectHealthApi()">Inspect /api/health</button>
+          <button class="btn btn-primary" onclick="triggerAnsibleSync()">Run Ansible Sync</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <section class="kpi-grid" id="sec-kpis">
+        <div class="card">
+          <div class="kpi-title"><span>Active Microservices</span><span>SLA 99.98%</span></div>
+          <div class="kpi-value" id="kpiServices">3 / 4 Healthy</div>
+          <div class="kpi-sub">Container port 3000 exposed</div>
+        </div>
+        <div class="card">
+          <div class="kpi-title"><span>Memory Allocation</span><span id="kpiMemText">-- / -- GB</span></div>
+          <div class="kpi-value" id="kpiMemPercent">--%</div>
+          <div class="progress-track"><div class="progress-fill" id="memBar" style="width: 0%"></div></div>
+        </div>
+        <div class="card">
+          <div class="kpi-title"><span>Host Uptime</span><span>Ubuntu 22.04</span></div>
+          <div class="kpi-value" id="kpiUptime">--m --s</div>
+          <div class="kpi-sub" id="kpiHost">Host: loading...</div>
+        </div>
+        <div class="card">
+          <div class="kpi-title"><span>Monitoring Agent</span><span>Nagios Core</span></div>
+          <div class="kpi-value" style="color: var(--success);">HARD OK</div>
+          <div class="kpi-sub">check_http interval: 60s</div>
+        </div>
+      </section>
+
+      <!-- DevOps Toolchain Cards -->
+      <section class="pipeline-grid" id="sec-pipeline">
+        <div class="stage-card">
+          <div class="stage-tag">Phase 01 · Provisioning</div>
+          <h3>Terraform IaC Engine</h3>
+          <p>Declaratively provisions isolated Ubuntu container runtime and binds external network bridge port 3000.</p>
+        </div>
+        <div class="stage-card">
+          <div class="stage-tag">Phase 02 · Configuration</div>
+          <h3>Ansible Playbook Runner</h3>
+          <p>Agentless configuration management installing Node.js runtime, dependencies, and zero-downtime app rollout.</p>
+        </div>
+        <div class="stage-card">
+          <div class="stage-tag">Phase 03 · Observability</div>
+          <h3>Nagios Continuous Monitor</h3>
+          <p>Active HTTP &amp; ICMP health verification detecting soft-to-hard state transitions in real time.</p>
+        </div>
+      </section>
+
+      <!-- Services & Logs -->
+      <section class="split-grid">
+        <div class="card" id="sec-services">
+          <div class="card-header">
+            <h3>Managed Container Services</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Live Telemetry</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Latency</th>
+                  <th>CPU</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="servicesBody"></tbody>
+            </table>
+          </div>
+
+          <div class="spec-grid">
+            <div class="spec-box"><span>OS Kernel</span><strong id="specPlatform">--</strong></div>
+            <div class="spec-box"><span>Runtime</span><strong id="specNode">--</strong></div>
+            <div class="spec-box"><span>vCPU Cores</span><strong id="specCpu">--</strong></div>
+          </div>
+        </div>
+
+        <div class="card" id="sec-logs">
+          <div class="card-header">
+            <h3>Automation Audit Trail</h3>
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">Real-Time</span>
+          </div>
+          <div class="log-list" id="logsList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Health JSON Modal -->
+  <div class="modal-backdrop" id="healthModal" onclick="closeModal(event)">
+    <div class="modal">
+      <div class="card-header" style="margin-bottom: 0.5rem;">
+        <h3>Nagios HTTP Probe Endpoint (/api/health)</h3>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('healthModal').classList.remove('open')">Close</button>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary);">Nagios Core queries this endpoint every cycle to verify application availability.</p>
+      <pre id="healthJsonOutput">Loading...</pre>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('open');
+    }
+
+    function filterView(section, btn) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      if (window.innerWidth <= 768) toggleSidebar();
+
+      const map = {
+        all: ['sec-kpis', 'sec-pipeline', 'sec-services', 'sec-logs'],
+        services: ['sec-kpis', 'sec-services'],
+        pipeline: ['sec-pipeline', 'sec-logs'],
+        logs: ['sec-logs']
+      };
+      ['sec-kpis', 'sec-pipeline', 'sec-services', 'sec-logs'].forEach(id => {
+        document.getElementById(id).style.display = map[section].includes(id) ? '' : 'none';
+      });
+    }
+
+    function formatUptime(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+    }
+
+    async function loadMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const data = await res.json();
+        document.getElementById('kpiMemPercent').textContent = `${data.memory.percent}%`;
+        document.getElementById('kpiMemText').textContent = `${data.memory.usedGB} / ${data.memory.totalGB} GB`;
+        document.getElementById('memBar').style.width = `${data.memory.percent}%`;
+        document.getElementById('kpiUptime').textContent = formatUptime(data.uptime);
+        document.getElementById('kpiHost').textContent = `Container ID: ${data.hostname}`;
+        document.getElementById('specPlatform').textContent = data.platform;
+        document.getElementById('specNode').textContent = data.nodeVersion;
+        document.getElementById('specCpu').textContent = `${data.cpuCores} vCPUs`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderServices(services) {
+      const healthyCount = services.filter(s => s.status === 'Healthy').length;
+      document.getElementById('kpiServices').textContent = `${healthyCount} / ${services.length} Healthy`;
+
+      const tbody = document.getElementById('servicesBody');
+      tbody.innerHTML = services.map(s => `
+        <tr>
+          <td>
+            <div style="font-weight: 600;">${s.name}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted);">${s.id} · ${s.region}</div>
+          </td>
+          <td>
+            <span class="badge ${s.status === 'Healthy' ? 'badge-healthy' : 'badge-degraded'}">
+              ● ${s.status}
+            </span>
+          </td>
+          <td style="font-family: monospace;">${s.latency}</td>
+          <td style="font-family: monospace;">${s.cpu}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="restartService('${s.id}')">Restart</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderLogs(logs) {
+      const container = document.getElementById('logsList');
+      container.innerHTML = logs.map(l => `
+        <div class="log-item">
+          <div class="log-meta">
+            <span class="log-actor">[${l.actor}]</span>
+            <span>${new Date(l.time).toLocaleTimeString()}</span>
+          </div>
+          <div class="log-msg">${l.action}</div>
+        </div>
+      `).join('');
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/dashboard');
+        const data = await res.json();
+        renderServices(data.services);
+        renderLogs(data.auditLogs);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function restartService(id) {
+      const res = await fetch(`/api/services/${id}/restart`, { method: 'POST' });
+      const data = await res.json();
+      showToast(`${data.message} — Latency stabilized`);
+      loadDashboard();
+    }
+
+    async function triggerAnsibleSync() {
+      const res = await fetch('/api/pipeline/sync', { method: 'POST' });
+      const data = await res.json();
+      renderLogs(data.auditLogs);
+      showToast('Ansible playbook sync completed (0 changed, 4 ok)');
+    }
+
+    async function inspectHealthApi() {
+      document.getElementById('healthModal').classList.add('open');
+      const res = await fetch('/api/health');
+      const data = await res.json();
+      document.getElementById('healthJsonOutput').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function closeModal(e) {
+      if (e.target.id === 'healthModal') {
+        document.getElementById('healthModal').classList.remove('open');
+      }
+    }
+
+    loadMetrics();
+    loadDashboard();
+    setInterval(loadMetrics, 4000);
+  </script>
+</body>
+</html>
