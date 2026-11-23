@@ -2,29 +2,41 @@ terraform {
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "~> 3.0"
+      version = "~> 3.0.2"
     }
   }
 }
 
 provider "docker" {}
 
-# Pull the official Ubuntu 22.04 image
 resource "docker_image" "ubuntu" {
-  name         = "ubuntu:22.04"
+  name         = var.base_image
   keep_locally = true
 }
 
-# Create and start the container server
-resource "docker_container" "app_server" {
-  image = docker_image.ubuntu.image_id
-  name  = "deployflow-server"
-
-  # Keep the container running in the background
+resource "docker_container" "deployflow_server" {
+  name    = var.container_name
+  image   = docker_image.ubuntu.image_id
   command = ["tail", "-f", "/dev/null"]
+  restart = "unless-stopped"
 
   ports {
     internal = 3000
-    external = 3000
+    external = var.external_port
+  }
+
+  labels {
+    label = "project"
+    value = "deployflow"
+  }
+
+  labels {
+    label = "environment"
+    value = var.environment
+  }
+
+  labels {
+    label = "managed_by"
+    value = "terraform"
   }
 }

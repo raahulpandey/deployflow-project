@@ -3,593 +3,869 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DeployFlow Enterprise | Cloud Infrastructure & DevOps Console</title>
+  <title>DeployFlow Control Plane — Production SRE Console</title>
   <style>
     :root {
-      --bg-base: #090d16;
-      --bg-surface: #111827;
-      --bg-elevated: #182235;
-      --border: #1f2d47;
-      --text-primary: #f3f4f6;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --success: #10b981;
-      --success-bg: rgba(16, 185, 129, 0.12);
-      --warning: #f59e0b;
-      --warning-bg: rgba(245, 158, 11, 0.12);
-      --danger: #ef4444;
-      --danger-bg: rgba(239, 68, 68, 0.12);
-      --sidebar-w: 250px;
+      --bg-canvas: #060913;
+      --bg-sidebar: #090e1c;
+      --bg-surface: #0d1426;
+      --bg-elevated: #121b33;
+      --border-subtle: rgba(148, 163, 184, 0.12);
+      --border-strong: rgba(148, 163, 184, 0.24);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --blue: #3b82f6;
+      --blue-glow: rgba(59, 130, 246, 0.18);
+      --emerald: #10b981;
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.14);
+      --crimson: #ef4444;
+      --crimson-bg: rgba(239, 68, 68, 0.15);
+      --purple: #8b5cf6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-      background: var(--bg-base);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-canvas);
       color: var(--text-primary);
       display: flex;
       min-height: 100vh;
-      overflow-x: hidden;
+      font-variant-numeric: tabular-nums;
     }
 
     /* Sidebar */
     .sidebar {
-      width: var(--sidebar-w);
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border);
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
-      position: fixed;
-      top: 0; bottom: 0; left: 0;
-      z-index: 40;
-      transition: transform 0.25s ease;
+      justify-content: space-between;
+      padding: 20px 16px;
+      flex-shrink: 0;
     }
     .brand {
-      padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border-subtle);
     }
-    .brand-logo {
-      width: 34px; height: 34px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #3b82f6, #06b6d4);
-      display: grid; place-items: center;
-      font-weight: 800; font-size: 1rem; color: #fff;
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
     }
-    .brand-text h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
-    .brand-text span { font-size: 0.72rem; color: var(--text-secondary); display: block; }
+    .brand-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+    .brand-env { font-size: 11px; color: var(--emerald); font-weight: 600; }
 
-    .nav-section { padding: 1rem 0.75rem; flex: 1; }
-    .nav-label {
-      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
-      color: var(--text-muted); padding: 0 0.75rem 0.5rem; font-weight: 600;
+    .nav-section {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin: 22px 0 8px 10px;
     }
-    .nav-item {
-      width: 100%; display: flex; align-items: center; gap: 0.75rem;
-      padding: 0.65rem 0.75rem; margin-bottom: 0.25rem;
-      border-radius: 8px; border: none; background: transparent;
-      color: var(--text-secondary); font-size: 0.88rem; font-weight: 500;
-      cursor: pointer; text-align: left; transition: all 0.15s;
-    }
-    .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
-    .nav-item.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; }
-
-    .sidebar-footer {
-      padding: 1rem 1.25rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.78rem;
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
       color: var(--text-secondary);
-    }
-    .env-pill {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: var(--bg-elevated); border: 1px solid var(--border);
-      padding: 0.3rem 0.6rem; border-radius: 6px; margin-top: 0.4rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.74rem;
-    }
-
-    /* Main Content */
-    .main {
-      flex: 1;
-      margin-left: var(--sidebar-w);
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    /* Topbar */
-    .topbar {
-      height: 64px;
-      background: rgba(17, 24, 39, 0.85);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 1.5rem;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky; top: 0; z-index: 30;
+      margin-bottom: 4px;
+      transition: 0.15s;
     }
-    .topbar-left { display: flex; align-items: center; gap: 1rem; }
-    .menu-btn {
-      display: none; background: var(--bg-elevated); border: 1px solid var(--border);
-      color: var(--text-primary); padding: 0.45rem 0.65rem; border-radius: 6px; cursor: pointer;
+    .nav-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-primary); }
+    .nav-btn.active {
+      background: var(--blue-glow);
+      border-color: rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+      font-weight: 600;
     }
-    .breadcrumb { font-size: 0.9rem; color: var(--text-secondary); }
-    .breadcrumb strong { color: var(--text-primary); }
+    .nav-pill {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-secondary);
+    }
 
-    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 0.45rem;
-      padding: 0.35rem 0.75rem; border-radius: 999px;
-      background: var(--success-bg); color: var(--success);
-      font-size: 0.78rem; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.25);
+    .infra-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px;
     }
-    .pulse {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--success);
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-      animation: pulse 2s infinite;
+    .infra-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      margin-bottom: 6px;
     }
+    .infra-row:last-child { margin-bottom: 0; }
+    .infra-k { color: var(--text-muted); }
+    .infra-v { font-family: monospace; color: #cbd5e1; }
+
+    /* Main Workspace */
+    .workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      height: 58px;
+      background: rgba(9, 14, 28, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .crumb { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+    .crumb strong { color: var(--text-primary); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .status-pill.healthy { background: var(--emerald-bg); color: var(--emerald); border: 1px solid rgba(16,185,129,0.35); }
+    .status-pill.latency, .status-pill.degraded { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.4); }
+    .status-pill.outage { background: var(--crimson-bg); color: var(--crimson); border: 1px solid rgba(239,68,68,0.45); animation: pulse 1.4s infinite; }
+
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-      70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .content { padding: 26px 28px; max-width: 1480px; width: 100%; }
+
+    /* Alert Banner */
+    .chaos-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 18px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .chaos-banner.outage {
+      display: flex;
+      background: var(--crimson-bg);
+      border: 1px solid rgba(239,68,68,0.45);
+      color: #fecaca;
+    }
+    .chaos-banner.latency, .chaos-banner.degraded {
+      display: flex;
+      background: var(--amber-bg);
+      border: 1px solid rgba(245,158,11,0.45);
+      color: #fde68a;
     }
 
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .subtext { font-size: 13.5px; color: var(--text-secondary); }
+
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn {
-      display: inline-flex; align-items: center; gap: 0.45rem;
-      padding: 0.5rem 0.95rem; border-radius: 8px; font-size: 0.83rem; font-weight: 600;
-      cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+      padding: 9px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      transition: 0.15s;
     }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-outline { background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary); }
-    .btn-outline:hover { border-color: #3b82f6; }
-    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+    .btn:hover { background: var(--bg-elevated); }
+    .btn-blue { background: #2563eb; border-color: #3b82f6; color: #fff; }
+    .btn-blue:hover { background: #1d4ed8; }
+    .btn-red { background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.45); color: #fca5a5; }
+    .btn-red:hover { background: rgba(239, 68, 68, 0.28); }
+    .btn-amber { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.45); color: #fcd34d; }
+    .btn-amber:hover { background: rgba(245, 158, 11, 0.26); }
+    .btn-emerald { background: rgba(16, 185, 129, 0.16); border-color: rgba(16, 185, 129, 0.45); color: #6ee7b7; }
+    .btn-emerald:hover { background: rgba(16, 185, 129, 0.28); }
 
-    /* Container */
-    .content { padding: 1.5rem; max-width: 1360px; width: 100%; margin: 0 auto; }
-
-    .page-header {
-      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
-      gap: 1rem; margin-bottom: 1.5rem;
+    /* Grids & Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 16px; margin-bottom: 18px; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .main-split { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+    @media (max-width: 1100px) {
+      .chart-grid, .main-split { grid-template-columns: 1fr; }
     }
-    .page-header h2 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
-    .page-header p { font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem; }
-    .header-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; }
 
-    /* KPI Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
     .card {
       background: var(--bg-surface);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      padding: 1.2rem;
+      padding: 18px 20px;
     }
-    .kpi-title { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; display: flex; justify-content: space-between; }
-    .kpi-value { font-size: 1.65rem; font-weight: 700; margin: 0.5rem 0 0.35rem; letter-spacing: -0.02em; }
-    .kpi-sub { font-size: 0.78rem; color: var(--text-muted); }
-    .progress-track {
-      width: 100%; height: 6px; background: var(--bg-elevated);
-      border-radius: 999px; overflow: hidden; margin-top: 0.65rem;
-    }
-    .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .kpi-value { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .kpi-foot { font-size: 12px; color: var(--text-muted); }
 
-    /* Pipeline Banner */
-    .pipeline-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .stage-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
+    /* Chaos Panel */
+    .chaos-box {
+      background: linear-gradient(145deg, #0d1426, #131b31);
+      border: 1px solid rgba(139, 92, 246, 0.28);
       border-radius: 12px;
-      padding: 1.1rem;
-      position: relative;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
     }
-    .stage-tag {
-      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: #60a5fa; margin-bottom: 0.35rem;
-    }
-    .stage-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
-    .stage-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; }
+    .chaos-title { font-size: 14.5px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .tag-purple { font-size: 10.5px; background: rgba(139, 92, 246, 0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(139, 92, 246, 0.35); }
+    .chaos-desc { font-size: 12.5px; color: var(--text-secondary); max-width: 620px; }
 
-    /* Two-column layout */
-    .split-grid {
-      display: grid;
-      grid-template-columns: 1.45fr 1fr;
-      gap: 1.25rem;
-    }
-
-    .card-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
-    }
-    .card-header h3 { font-size: 1rem; font-weight: 600; }
+    /* Charts */
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-title { font-size: 14.5px; font-weight: 700; }
+    .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 9px; height: 9px; border-radius: 2px; }
+    svg.chart { width: 100%; height: 170px; display: block; overflow: visible; }
 
     /* Table */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
-      text-align: left; padding: 0.65rem 0.75rem; color: var(--text-muted);
-      font-weight: 600; font-size: 0.75rem; text-transform: uppercase;
-      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border-subtle);
     }
-    td { padding: 0.8rem 0.75rem; border-bottom: 1px solid rgba(31, 45, 71, 0.55); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
+    td { padding: 12px 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.07); }
+    .svc-title { font-weight: 600; color: var(--text-primary); }
+    .svc-sub { font-size: 11.5px; color: var(--text-muted); font-family: monospace; }
 
     .badge {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      padding: 0.22rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
     }
-    .badge-healthy { background: var(--success-bg); color: var(--success); }
-    .badge-degraded { background: var(--warning-bg); color: var(--warning); }
+    .badge.healthy, .badge.active { background: var(--emerald-bg); color: var(--emerald); }
+    .badge.degraded, .badge.standby { background: var(--amber-bg); color: var(--amber); }
+    .badge.critical { background: var(--crimson-bg); color: var(--crimson); }
+    .badge.archived { background: rgba(148,163,184,0.12); color: var(--text-secondary); }
 
-    /* Audit Logs */
-    .log-list { display: flex; flex-direction: column; gap: 0.65rem; max-height: 360px; overflow-y: auto; }
-    .log-item {
+    .btn-xs {
       background: var(--bg-elevated);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-xs:hover { background: #1e293b; }
+
+    /* Audit Stream */
+    .feed-item {
+      background: #080d1a;
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--blue);
       border-radius: 8px;
-      padding: 0.75rem;
-      font-size: 0.8rem;
+      padding: 11px 13px;
+      margin-bottom: 10px;
     }
-    .log-meta {
-      display: flex; justify-content: space-between; color: var(--text-muted);
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; margin-bottom: 0.3rem;
-    }
-    .log-actor { color: #60a5fa; font-weight: 600; }
-    .log-msg { color: var(--text-primary); line-height: 1.4; }
+    .feed-item.success { border-left-color: var(--emerald); }
+    .feed-item.warning { border-left-color: var(--amber); }
+    .feed-item.critical { border-left-color: var(--crimson); }
+    .feed-meta { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; font-family: monospace; }
+    .feed-src { color: #60a5fa; font-weight: 700; }
+    .feed-time { color: var(--text-muted); }
+    .feed-msg { font-size: 12.5px; color: #cbd5e1; line-height: 1.4; }
 
-    /* Host Spec Bar */
-    .spec-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem; margin-top: 1.25rem;
+    /* Terminal Logs */
+    .terminal {
+      background: #04070f;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #34d399;
+      max-height: 460px;
+      overflow-y: auto;
     }
-    .spec-box {
-      background: var(--bg-elevated); border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.75rem;
-    }
-    .spec-box span { display: block; font-size: 0.72rem; color: var(--text-muted); }
-    .spec-box strong { font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 0.2rem; display: block; }
+    .log-line { border-bottom: 1px solid rgba(255,255,255,0.03); padding: 2px 0; }
+    .log-crit { color: #f87171; }
+    .log-warn { color: #fbbf24; }
 
-    /* Toast */
-    .toast {
-      position: fixed; bottom: 1.5rem; right: 1.5rem;
-      background: var(--bg-elevated); border: 1px solid var(--accent);
-      color: var(--text-primary); padding: 0.8rem 1.1rem; border-radius: 10px;
-      font-size: 0.84rem; box-shadow: 0 10px 25px rgba(0,0,0,0.45);
-      transform: translateY(120%); opacity: 0; transition: all 0.25s ease; z-index: 60;
-    }
-    .toast.show { transform: translateY(0); opacity: 1; }
-
-    /* Modal */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-      display: none; place-items: center; z-index: 50; padding: 1rem;
-    }
-    .modal-backdrop.open { display: grid; }
-    .modal {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 12px; max-width: 520px; width: 100%; padding: 1.35rem;
-    }
-    .modal pre {
-      background: var(--bg-base); border: 1px solid var(--border);
-      padding: 0.9rem; border-radius: 8px; overflow-x: auto;
-      font-size: 0.8rem; color: #34d399; margin: 0.85rem 0;
+    /* Code Tabs */
+    .code-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    pre.code-view {
+      background: #04070f;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #e2e8f0;
+      overflow-x: auto;
     }
 
-    /* Responsive */
-    .overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35;
-    }
-    @media (max-width: 960px) {
-      .split-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .overlay.open { display: block; }
-      .main { margin-left: 0; }
-      .menu-btn { display: inline-flex; }
-      .topbar { padding: 0 1rem; }
-      .content { padding: 1rem; }
-    }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
   </style>
 </head>
 <body>
-
-  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="brand-logo">DF</div>
-      <div class="brand-text">
-        <h1>DeployFlow</h1>
-        <span>Enterprise Ops Console</span>
+  <aside class="sidebar">
+    <div>
+      <div class="brand">
+        <div class="brand-icon">DF</div>
+        <div>
+          <div class="brand-name">DeployFlow <span style="font-size:11px;color:#60a5fa;">v2.0</span></div>
+          <div class="brand-env">● PRODUCTION CONTROL PLANE</div>
+        </div>
       </div>
+
+      <div class="nav-section">OBSERVABILITY &amp; OPS</div>
+      <button class="nav-btn active" onclick="openTab('overview', this)">
+        <span>Command Center</span>
+        <span class="nav-pill" id="nav-svc-pill">4/4</span>
+      </button>
+      <button class="nav-btn" onclick="openTab('releases', this)">
+        <span>Releases &amp; Pipeline</span>
+        <span class="nav-pill" id="nav-rel-pill">v2.1</span>
+      </button>
+      <button class="nav-btn" onclick="openTab('logs', this)">
+        <span>Container Logs</span>
+        <span class="nav-pill">tty0</span>
+      </button>
+      <button class="nav-btn" onclick="openTab('iac', this)">
+        <span>IaC &amp; Nagios Config</span>
+        <span class="nav-pill">3 files</span>
+      </button>
     </div>
 
-    <div class="nav-section">
-      <div class="nav-label">Platform</div>
-      <button class="nav-item active" onclick="filterView('all', this)">Overview Dashboard</button>
-      <button class="nav-item" onclick="filterView('services', this)">Microservices &amp; Nodes</button>
-      <button class="nav-item" onclick="filterView('pipeline', this)">IaC &amp; Automation Stack</button>
-      <button class="nav-item" onclick="filterView('logs', this)">Audit &amp; Event Stream</button>
-    </div>
-
-    <div class="sidebar-footer">
-      <div>Provisioned Cluster</div>
-      <div class="env-pill">docker://deployflow-server</div>
+    <div class="infra-card">
+      <div class="infra-row"><span class="infra-k">Host</span><span class="infra-v" id="side-host">deployflow-server</span></div>
+      <div class="infra-row"><span class="infra-k">Bridge IP</span><span class="infra-v">172.17.0.2:3000</span></div>
+      <div class="infra-row"><span class="infra-k">Nagios UI</span><span class="infra-v">localhost:8081</span></div>
+      <div class="infra-row"><span class="infra-k">Disk</span><span class="infra-v" id="side-disk">-</span></div>
     </div>
   </aside>
 
-  <!-- Main Workspace -->
-  <div class="main">
+  <main class="workspace">
     <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-        <div class="breadcrumb">Production / <strong>wsl-local-cluster</strong></div>
+      <div class="crumb">
+        <span>deployflow-project</span> / <strong>wsl-prod-cluster</strong> / <span id="top-release" style="font-family:monospace;color:#60a5fa;">v2.1.0-prod</span>
       </div>
       <div class="topbar-right">
-        <div class="status-badge" id="healthBadge">
-          <span class="pulse"></span>
-          <span id="healthText">NAGIOS PROBE: OK</span>
+        <a href="http://localhost:8081" target="_blank" class="btn" style="text-decoration:none;padding:6px 12px;font-size:12px;">Open Nagios UI ↗</a>
+        <div class="status-pill healthy" id="global-pill">
+          <span class="dot"></span>
+          <span id="global-pill-text">NAGIOS PROBE: HARD OK</span>
         </div>
       </div>
     </header>
 
-    <main class="content">
-      <div class="page-header">
-        <div>
-          <h2>Infrastructure &amp; Deployment Control</h2>
-          <p>Automated container lifecycle managed via Terraform, Ansible, and Nagios Core.</p>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-outline" onclick="inspectHealthApi()">Inspect /api/health</button>
-          <button class="btn btn-primary" onclick="triggerAnsibleSync()">Run Ansible Sync</button>
-        </div>
+    <div class="content">
+      <!-- Dynamic Alert Banner -->
+      <div class="chaos-banner" id="chaos-banner">
+        <div id="chaos-banner-msg">Alert active</div>
+        <button class="btn btn-emerald" style="padding:6px 12px;font-size:12px;" onclick="setChaos('healthy')">Auto-Heal Now</button>
       </div>
 
-      <!-- KPI Cards -->
-      <section class="kpi-grid" id="sec-kpis">
-        <div class="card">
-          <div class="kpi-title"><span>Active Microservices</span><span>SLA 99.98%</span></div>
-          <div class="kpi-value" id="kpiServices">3 / 4 Healthy</div>
-          <div class="kpi-sub">Container port 3000 exposed</div>
-        </div>
-        <div class="card">
-          <div class="kpi-title"><span>Memory Allocation</span><span id="kpiMemText">-- / -- GB</span></div>
-          <div class="kpi-value" id="kpiMemPercent">--%</div>
-          <div class="progress-track"><div class="progress-fill" id="memBar" style="width: 0%"></div></div>
-        </div>
-        <div class="card">
-          <div class="kpi-title"><span>Host Uptime</span><span>Ubuntu 22.04</span></div>
-          <div class="kpi-value" id="kpiUptime">--m --s</div>
-          <div class="kpi-sub" id="kpiHost">Host: loading...</div>
-        </div>
-        <div class="card">
-          <div class="kpi-title"><span>Monitoring Agent</span><span>Nagios Core</span></div>
-          <div class="kpi-value" style="color: var(--success);">HARD OK</div>
-          <div class="kpi-sub">check_http interval: 60s</div>
-        </div>
-      </section>
-
-      <!-- DevOps Toolchain Cards -->
-      <section class="pipeline-grid" id="sec-pipeline">
-        <div class="stage-card">
-          <div class="stage-tag">Phase 01 · Provisioning</div>
-          <h3>Terraform IaC Engine</h3>
-          <p>Declaratively provisions isolated Ubuntu container runtime and binds external network bridge port 3000.</p>
-        </div>
-        <div class="stage-card">
-          <div class="stage-tag">Phase 02 · Configuration</div>
-          <h3>Ansible Playbook Runner</h3>
-          <p>Agentless configuration management installing Node.js runtime, dependencies, and zero-downtime app rollout.</p>
-        </div>
-        <div class="stage-card">
-          <div class="stage-tag">Phase 03 · Observability</div>
-          <h3>Nagios Continuous Monitor</h3>
-          <p>Active HTTP &amp; ICMP health verification detecting soft-to-hard state transitions in real time.</p>
-        </div>
-      </section>
-
-      <!-- Services & Logs -->
-      <section class="split-grid">
-        <div class="card" id="sec-services">
-          <div class="card-header">
-            <h3>Managed Container Services</h3>
-            <span style="font-size: 0.78rem; color: var(--text-secondary);">Live Telemetry</span>
+      <!-- TAB 1: COMMAND CENTER -->
+      <section class="view-section active" id="tab-overview">
+        <div class="page-head">
+          <div>
+            <h1>Production Infrastructure &amp; Telemetry</h1>
+            <div class="subtext">Real-time container health, automated Ansible state convergence, and active Nagios Core 4 verification.</div>
           </div>
-          <div class="table-wrap">
+          <div class="btn-group">
+            <button class="btn" onclick="openTab('logs', document.querySelectorAll('.nav-btn')[2])">Tail Live Logs</button>
+            <button class="btn btn-blue" onclick="runAnsibleSync()">⚡ Run Ansible Sync</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+          <div class="card">
+            <div class="kpi-label"><span>Healthy Services</span><span id="kpi-sla" style="color:var(--emerald);">SLA 99.99%</span></div>
+            <div class="kpi-value" id="kpi-services">4 / 4</div>
+            <div class="kpi-foot">Docker bridge 172.17.0.2:3000</div>
+          </div>
+          <div class="card">
+            <div class="kpi-label"><span>Container Memory</span><span id="kpi-mem-sub">-</span></div>
+            <div class="kpi-value" id="kpi-mem">-</div>
+            <div class="kpi-foot" id="kpi-cpu-foot">CPU Utilization: -</div>
+          </div>
+          <div class="card">
+            <div class="kpi-label"><span>Health Probe Latency</span><span>/api/health</span></div>
+            <div class="kpi-value" id="kpi-latency">12 ms</div>
+            <div class="kpi-foot">Nagios check_http interval: 60s</div>
+          </div>
+          <div class="card">
+            <div class="kpi-label"><span>System Uptime</span><span id="kpi-node">Node.js</span></div>
+            <div class="kpi-value" id="kpi-uptime">0h 0m 0s</div>
+            <div class="kpi-foot" id="kpi-kernel">Linux Kernel</div>
+          </div>
+        </div>
+
+        <!-- Chaos Engineering Panel -->
+        <div class="chaos-box">
+          <div>
+            <div class="chaos-title">Chaos Engineering &amp; Nagios Live Alert Simulator <span class="tag-purple">LIVE DEMO</span></div>
+            <div class="chaos-desc">Inject real faults into <code>/api/health</code> to trigger a <strong>RED CRITICAL</strong> alert on your Nagios Core dashboard (port 8081), then recover automatically.</div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-red" onclick="setChaos('outage')">Inject 503 Outage</button>
+            <button class="btn btn-amber" onclick="setChaos('latency')">Inject 2.2s Latency</button>
+            <button class="btn btn-emerald" onclick="setChaos('healthy')">✓ Auto-Heal Cluster</button>
+          </div>
+        </div>
+
+        <!-- Real-Time SVG Charts -->
+        <div class="chart-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Compute &amp; Memory Utilization (%)</div>
+              <div class="legend">
+                <span><i class="swatch" style="background:#3b82f6;"></i> CPU %</span>
+                <span><i class="swatch" style="background:#10b981;"></i> Memory %</span>
+              </div>
+            </div>
+            <svg class="chart" id="chart-compute" viewBox="0 0 500 170"></svg>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">HTTP Health Probe Latency (ms)</div>
+              <div class="legend">
+                <span><i class="swatch" style="background:#8b5cf6;"></i> Response Time (ms)</span>
+              </div>
+            </div>
+            <svg class="chart" id="chart-latency" viewBox="0 0 500 170"></svg>
+          </div>
+        </div>
+
+        <!-- Services & Audit Stream -->
+        <div class="main-split">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Managed Microservices</div>
+              <span style="font-size:12px;color:var(--text-muted);">Live Node Telemetry</span>
+            </div>
             <table>
               <thead>
                 <tr>
-                  <th>Service</th>
-                  <th>Status</th>
-                  <th>Latency</th>
-                  <th>CPU</th>
-                  <th>Action</th>
+                  <th>SERVICE</th>
+                  <th>STATUS</th>
+                  <th>LATENCY</th>
+                  <th>CPU / MEM</th>
+                  <th>CONTROL</th>
                 </tr>
               </thead>
-              <tbody id="servicesBody"></tbody>
+              <tbody id="services-body"></tbody>
             </table>
           </div>
 
-          <div class="spec-grid">
-            <div class="spec-box"><span>OS Kernel</span><strong id="specPlatform">--</strong></div>
-            <div class="spec-box"><span>Runtime</span><strong id="specNode">--</strong></div>
-            <div class="spec-box"><span>vCPU Cores</span><strong id="specCpu">--</strong></div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Automation Audit Stream</div>
+              <span style="font-size:12px;color:var(--emerald);">● Streaming</span>
+            </div>
+            <div id="audit-feed"></div>
           </div>
-        </div>
-
-        <div class="card" id="sec-logs">
-          <div class="card-header">
-            <h3>Automation Audit Trail</h3>
-            <span style="font-size: 0.78rem; color: var(--text-secondary);">Real-Time</span>
-          </div>
-          <div class="log-list" id="logsList"></div>
         </div>
       </section>
-    </main>
-  </div>
 
-  <!-- Health JSON Modal -->
-  <div class="modal-backdrop" id="healthModal" onclick="closeModal(event)">
-    <div class="modal">
-      <div class="card-header" style="margin-bottom: 0.5rem;">
-        <h3>Nagios HTTP Probe Endpoint (/api/health)</h3>
-        <button class="btn btn-outline btn-sm" onclick="document.getElementById('healthModal').classList.remove('open')">Close</button>
-      </div>
-      <p style="font-size: 0.82rem; color: var(--text-secondary);">Nagios Core queries this endpoint every cycle to verify application availability.</p>
-      <pre id="healthJsonOutput">Loading...</pre>
+      <!-- TAB 2: RELEASES & PIPELINE -->
+      <section class="view-section" id="tab-releases">
+        <div class="page-head">
+          <div>
+            <h1>Release Rollouts &amp; DevOps Pipeline</h1>
+            <div class="subtext">Trigger zero-downtime canary deployments or instant version rollbacks managed via Ansible.</div>
+          </div>
+          <button class="btn btn-blue" onclick="deployCanary()">+ Deploy New Canary Release</button>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="card">
+            <div class="kpi-label"><span>STAGE 01 · TERRAFORM</span><span style="color:var(--emerald);">PROVISIONED</span></div>
+            <div class="kpi-value" style="font-size:18px;">deployflow-server</div>
+            <div class="kpi-foot">Declarative Ubuntu 22.04 container + bridge port 3000</div>
+          </div>
+          <div class="card">
+            <div class="kpi-label"><span>STAGE 02 · ANSIBLE</span><span style="color:var(--emerald);">CONVERGED</span></div>
+            <div class="kpi-value" style="font-size:18px;">playbook.yml</div>
+            <div class="kpi-foot">Agentless Docker connector + Node.js process manager</div>
+          </div>
+          <div class="card">
+            <div class="kpi-label"><span>STAGE 03 · NAGIOS CORE</span><span style="color:var(--emerald);">MONITORING</span></div>
+            <div class="kpi-value" style="font-size:18px;">Nagios 4.4.6</div>
+            <div class="kpi-foot">Active HTTP &amp; API health checks on port 8081</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Deployment Version History</div>
+            <span style="font-size:12px;color:var(--text-muted);">One-Click Rollback Ready</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>VERSION</th>
+                <th>COMMIT</th>
+                <th>STATUS</th>
+                <th>DEPLOYED</th>
+                <th>RELEASE NOTES</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="releases-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: LIVE CONTAINER LOGS -->
+      <section class="view-section" id="tab-logs">
+        <div class="page-head">
+          <div>
+            <h1>Container Runtime Logs (<code>/var/log/deployflow.log</code>)</h1>
+            <div class="subtext">Direct stdout/stderr log stream from inside Ubuntu container <code>deployflow-server</code>.</div>
+          </div>
+          <button class="btn" onclick="loadLogs()">↻ Refresh Logs</button>
+        </div>
+        <div class="terminal" id="terminal-logs">Fetching container logs...</div>
+      </section>
+
+      <!-- TAB 4: IAC & NAGIOS CONFIG INSPECTOR -->
+      <section class="view-section" id="tab-iac">
+        <div class="page-head">
+          <div>
+            <h1>Infrastructure as Code &amp; Monitoring Blueprints</h1>
+            <div class="subtext">Live architectural configuration powering Terraform, Ansible, and Nagios Core.</div>
+          </div>
+        </div>
+        <div class="code-tabs">
+          <button class="btn btn-blue" onclick="showCode('tf', this)">terraform/main.tf</button>
+          <button class="btn" onclick="showCode('ans', this)">ansible/playbook.yml</button>
+          <button class="btn" onclick="showCode('nag', this)">nagios/deployflow.cfg</button>
+        </div>
+        <pre class="code-view" id="code-inspector"></pre>
+      </section>
     </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
+  </main>
 
   <script>
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3200);
+    const CODE_SNIPPETS = {
+      tf: `terraform {
+  required_providers {
+    docker = { source = "kreuzwerker/docker", version = "~> 3.0.2" }
+  }
+}
+
+provider "docker" {}
+
+resource "docker_image" "ubuntu" {
+  name         = "ubuntu:22.04"
+  keep_locally = true
+}
+
+resource "docker_container" "deployflow_server" {
+  name    = "deployflow-server"
+  image   = docker_image.ubuntu.image_id
+  command = ["tail", "-f", "/dev/null"]
+  ports { internal = 3000, external = 3000 }
+}`,
+      ans: `---
+- name: Configure and Deploy DeployFlow Enterprise Portal
+  hosts: webservers
+  gather_facts: no
+  tasks:
+    - name: Bootstrap Python, Node.js, npm, and procps
+      raw: apt-get update && apt-get install -y --no-install-recommends python3 nodejs npm procps
+
+    - name: Copy application artifacts
+      copy:
+        src: "{{ item }}"
+        dest: /opt/deployflow/
+      loop: [ ../app/package.json, ../app/server.js, ../app/public ]
+
+    - name: Install dependencies & start Node.js server
+      shell: npm install --omit=dev && nohup node server.js >/var/log/deployflow.log 2>&1 &
+      args: { chdir: /opt/deployflow }`,
+      nag: `define command {
+    command_name    check_deployflow_http
+    command_line    /usr/lib/nagios/plugins/check_http -H $HOSTADDRESS$ -p $ARG1$ -u $ARG2$
+}
+
+define host {
+    use         linux-server
+    host_name   deployflow-server
+    address     172.17.0.2
+}
+
+define service {
+    use                 generic-service
+    host_name           deployflow-server
+    service_description DeployFlow API Health Probe
+    check_command       check_deployflow_http!3000!/api/health
+    check_interval      1
+}`
+    };
+
+    function showCode(key, btn) {
+      document.querySelectorAll('.code-tabs .btn').forEach(b => b.classList.remove('btn-blue'));
+      btn.classList.add('btn-blue');
+      document.getElementById('code-inspector').textContent = CODE_SNIPPETS[key];
     }
+    document.getElementById('code-inspector').textContent = CODE_SNIPPETS.tf;
 
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('overlay').classList.toggle('open');
-    }
-
-    function filterView(section, btn) {
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      btn.classList.add('active');
-      if (window.innerWidth <= 768) toggleSidebar();
-
-      const map = {
-        all: ['sec-kpis', 'sec-pipeline', 'sec-services', 'sec-logs'],
-        services: ['sec-kpis', 'sec-services'],
-        pipeline: ['sec-pipeline', 'sec-logs'],
-        logs: ['sec-logs']
-      };
-      ['sec-kpis', 'sec-pipeline', 'sec-services', 'sec-logs'].forEach(id => {
-        document.getElementById(id).style.display = map[section].includes(id) ? '' : 'none';
-      });
+    function openTab(tabId, btn) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      if (tabId === 'logs') loadLogs();
     }
 
     function formatUptime(sec) {
       const h = Math.floor(sec / 3600);
       const m = Math.floor((sec % 3600) / 60);
       const s = sec % 60;
-      return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+      return `${h}h ${m}m ${s}s`;
     }
 
-    async function loadMetrics() {
-      try {
-        const res = await fetch('/api/metrics');
-        const data = await res.json();
-        document.getElementById('kpiMemPercent').textContent = `${data.memory.percent}%`;
-        document.getElementById('kpiMemText').textContent = `${data.memory.usedGB} / ${data.memory.totalGB} GB`;
-        document.getElementById('memBar').style.width = `${data.memory.percent}%`;
-        document.getElementById('kpiUptime').textContent = formatUptime(data.uptime);
-        document.getElementById('kpiHost').textContent = `Container ID: ${data.hostname}`;
-        document.getElementById('specPlatform').textContent = data.platform;
-        document.getElementById('specNode').textContent = data.nodeVersion;
-        document.getElementById('specCpu').textContent = `${data.cpuCores} vCPUs`;
-      } catch (e) {
-        console.error(e);
+    function renderSvgChart(svgId, seriesList, maxVal, unit) {
+      const svg = document.getElementById(svgId);
+      const W = 500, H = 170, padL = 34, padR = 10, padT = 12, padB = 24;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      let html = '';
+      // Horizontal grid lines
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + (plotH * i) / 4;
+        const val = Math.round(maxVal - (maxVal * i) / 4);
+        html += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(148,163,184,0.12)" stroke-dasharray="3,3" />`;
+        html += `<text x="${padL - 6}" y="${y + 4}" fill="#64748b" font-size="10" text-anchor="end">${val}${unit}</text>`;
       }
+
+      seriesList.forEach(s => {
+        if (!s.values.length) return;
+        const stepX = plotW / Math.max(1, s.values.length - 1);
+        const points = s.values.map((v, idx) => {
+          const x = padL + idx * stepX;
+          const clamped = Math.min(maxVal, Math.max(0, v));
+          const y = padT + plotH - (clamped / maxVal) * plotH;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const area = `${padL},${padT + plotH} ${points.join(' ')} ${padL + (s.values.length - 1) * stepX},${padT + plotH}`;
+        html += `<polygon points="${area}" fill="${s.fill}" />`;
+        html += `<polyline fill="none" stroke="${s.stroke}" stroke-width="2.2" points="${points.join(' ')}" />`;
+      });
+
+      svg.innerHTML = html;
     }
 
-    function renderServices(services) {
-      const healthyCount = services.filter(s => s.status === 'Healthy').length;
-      document.getElementById('kpiServices').textContent = `${healthyCount} / ${services.length} Healthy`;
+    async function fetchTelemetry() {
+      try {
+        const res = await fetch('/api/telemetry');
+        const data = await res.json();
 
-      const tbody = document.getElementById('servicesBody');
-      tbody.innerHTML = services.map(s => `
-        <tr>
-          <td>
-            <div style="font-weight: 600;">${s.name}</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">${s.id} · ${s.region}</div>
-          </td>
-          <td>
-            <span class="badge ${s.status === 'Healthy' ? 'badge-healthy' : 'badge-degraded'}">
-              ● ${s.status}
-            </span>
-          </td>
-          <td style="font-family: monospace;">${s.latency}</td>
-          <td style="font-family: monospace;">${s.cpu}</td>
-          <td>
-            <button class="btn btn-outline btn-sm" onclick="restartService('${s.id}')">Restart</button>
-          </td>
-        </tr>
-      `).join('');
-    }
+        // Sidebar & Header
+        document.getElementById('side-host').textContent = data.containerId;
+        document.getElementById('side-disk').textContent = data.diskUsage;
+        document.getElementById('nav-svc-pill').textContent = data.healthySummary.replace(' ', '');
+        const activeRel = data.releases.find(r => r.status === 'Active');
+        if (activeRel) {
+          document.getElementById('top-release').textContent = activeRel.version;
+          document.getElementById('nav-rel-pill').textContent = activeRel.version.split('-')[0];
+        }
 
-    function renderLogs(logs) {
-      const container = document.getElementById('logsList');
-      container.innerHTML = logs.map(l => `
-        <div class="log-item">
-          <div class="log-meta">
-            <span class="log-actor">[${l.actor}]</span>
-            <span>${new Date(l.time).toLocaleTimeString()}</span>
+        // Global Chaos Status Pill & Banner
+        const pill = document.getElementById('global-pill');
+        const pillText = document.getElementById('global-pill-text');
+        const banner = document.getElementById('chaos-banner');
+        const bannerMsg = document.getElementById('chaos-banner-msg');
+
+        pill.className = `status-pill ${data.chaosMode}`;
+        banner.className = `chaos-banner ${data.chaosMode}`;
+
+        if (data.chaosMode === 'outage') {
+          pillText.textContent = 'NAGIOS PROBE: 503 CRITICAL';
+          bannerMsg.innerHTML = '<strong>CRITICAL FAULT ACTIVE:</strong> <code>/api/health</code> is returning HTTP 503 Service Unavailable. Check Nagios Dashboard (port 8081) for live alert.';
+          document.getElementById('kpi-sla').textContent = 'OUTAGE ACTIVE';
+          document.getElementById('kpi-sla').style.color = 'var(--crimson)';
+        } else if (data.chaosMode === 'latency') {
+          pillText.textContent = 'NAGIOS PROBE: HIGH LATENCY';
+          bannerMsg.innerHTML = '<strong>DEGRADED LATENCY ACTIVE:</strong> Health probe response delayed by 2,200ms.';
+          document.getElementById('kpi-sla').textContent = 'DEGRADED';
+          document.getElementById('kpi-sla').style.color = 'var(--amber)';
+        } else {
+          pillText.textContent = 'NAGIOS PROBE: HARD OK';
+          document.getElementById('kpi-sla').textContent = 'SLA 99.99%';
+          document.getElementById('kpi-sla').style.color = 'var(--emerald)';
+        }
+
+        // KPIs
+        document.getElementById('kpi-services').textContent = data.healthySummary;
+        document.getElementById('kpi-mem').textContent = `${data.memory.percent}%`;
+        document.getElementById('kpi-mem-sub').textContent = `${data.memory.usedGB} / ${data.memory.totalGB} GB`;
+        document.getElementById('kpi-cpu-foot').textContent = `CPU Utilization: ${data.cpuPercent}% (${data.cpuCores} vCPU)`;
+        document.getElementById('kpi-latency').textContent = data.chaosMode === 'outage' ? 'TIMEOUT' : `${data.latencyMs} ms`;
+        document.getElementById('kpi-uptime').textContent = formatUptime(data.uptimeSeconds);
+        document.getElementById('kpi-node').textContent = data.nodeVersion;
+        document.getElementById('kpi-kernel').textContent = `Kernel ${data.kernel}`;
+
+        // Charts
+        renderSvgChart('chart-compute', [
+          { values: data.history.map(h => h.cpu), stroke: '#3b82f6', fill: 'rgba(59,130,246,0.14)' },
+          { values: data.history.map(h => h.mem), stroke: '#10b981', fill: 'rgba(16,185,129,0.12)' }
+        ], 100, '%');
+
+        const maxLat = Math.max(100, ...data.history.map(h => h.latency));
+        renderSvgChart('chart-latency', [
+          { values: data.history.map(h => h.latency), stroke: '#8b5cf6', fill: 'rgba(139,92,246,0.16)' }
+        ], maxLat, '');
+
+        // Services Table
+        document.getElementById('services-body').innerHTML = data.services.map(s => `
+          <tr>
+            <td>
+              <div class="svc-title">${s.name}</div>
+              <div class="svc-sub">${s.id} · ${s.zone} · :${s.port}</div>
+            </td>
+            <td><span class="badge ${s.status.toLowerCase()}"><span class="dot"></span>${s.status}</span></td>
+            <td>${s.latency} ms</td>
+            <td>${s.cpu}% · ${s.memoryMB}MB</td>
+            <td><button class="btn-xs" onclick="restartSvc('${s.id}')">Restart</button></td>
+          </tr>
+        `).join('');
+
+        // Audit Stream
+        document.getElementById('audit-feed').innerHTML = data.auditTrail.slice(0, 6).map(a => `
+          <div class="feed-item ${a.level}">
+            <div class="feed-meta"><span class="feed-src">[${a.source}]</span><span class="feed-time">${a.time}</span></div>
+            <div class="feed-msg">${a.message}</div>
           </div>
-          <div class="log-msg">${l.action}</div>
-        </div>
-      `).join('');
-    }
+        `).join('');
 
-    async function loadDashboard() {
-      try {
-        const res = await fetch('/api/dashboard');
-        const data = await res.json();
-        renderServices(data.services);
-        renderLogs(data.auditLogs);
-      } catch (e) {
-        console.error(e);
+        // Releases Table
+        document.getElementById('releases-body').innerHTML = data.releases.map(r => `
+          <tr>
+            <td><strong>${r.version}</strong></td>
+            <td style="font-family:monospace;color:#60a5fa;">${r.commit}</td>
+            <td><span class="badge ${r.status.toLowerCase()}">${r.status}</span></td>
+            <td>${r.deployedAt}</td>
+            <td style="color:var(--text-secondary);">${r.notes}</td>
+            <td>
+              ${r.status === 'Active'
+                ? '<span style="font-size:12px;color:var(--emerald);">Current</span>'
+                : `<button class="btn-xs" onclick="rollbackRelease('${r.version}')">Rollback</button>`}
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    async function restartService(id) {
-      const res = await fetch(`/api/services/${id}/restart`, { method: 'POST' });
+    async function setChaos(mode) {
+      await fetch('/api/chaos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      fetchTelemetry();
+    }
+
+    async function restartSvc(id) {
+      await fetch(`/api/services/${id}/restart`, { method: 'POST' });
+      fetchTelemetry();
+    }
+
+    async function runAnsibleSync() {
+      await fetch('/api/ansible/sync', { method: 'POST' });
+      fetchTelemetry();
+    }
+
+    async function deployCanary() {
+      await fetch('/api/releases/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: 'Zero-downtime canary rollout triggered from Control Plane' })
+      });
+      fetchTelemetry();
+    }
+
+    async function rollbackRelease(version) {
+      await fetch('/api/releases/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version })
+      });
+      fetchTelemetry();
+    }
+
+    async function loadLogs() {
+      const res = await fetch('/api/logs');
       const data = await res.json();
-      showToast(`${data.message} — Latency stabilized`);
-      loadDashboard();
+      const box = document.getElementById('terminal-logs');
+      box.innerHTML = data.lines.map(line => {
+        const cls = line.includes('CRITICAL') ? 'log-crit' : (line.includes('WARNING') ? 'log-warn' : '');
+        return `<div class="log-line ${cls}">${line}</div>`;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
     }
 
-    async function triggerAnsibleSync() {
-      const res = await fetch('/api/pipeline/sync', { method: 'POST' });
-      const data = await res.json();
-      renderLogs(data.auditLogs);
-      showToast('Ansible playbook sync completed (0 changed, 4 ok)');
-    }
-
-    async function inspectHealthApi() {
-      document.getElementById('healthModal').classList.add('open');
-      const res = await fetch('/api/health');
-      const data = await res.json();
-      document.getElementById('healthJsonOutput').textContent = JSON.stringify(data, null, 2);
-    }
-
-    function closeModal(e) {
-      if (e.target.id === 'healthModal') {
-        document.getElementById('healthModal').classList.remove('open');
-      }
-    }
-
-    loadMetrics();
-    loadDashboard();
-    setInterval(loadMetrics, 4000);
+    fetchTelemetry();
+    setInterval(fetchTelemetry, 3000);
   </script>
 </body>
 </html>

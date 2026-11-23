@@ -1,41 +1,64 @@
 ---
-- name: Configure and Deploy DeployFlow Enterprise Portal
+- name: Configure and Deploy DeployFlow v2.0 Control Plane
   hosts: webservers
   gather_facts: no
 
+  vars:
+    app_dir: /opt/deployflow
+    app_port: 3000
+    app_version: v2.1.0-prod
+    app_env: production
+
   tasks:
-    - name: Bootstrap Python, Node.js, npm, and procps on Ubuntu container
+    - name: Bootstrap Python 3, Node.js, npm, and process tools
       raw: apt-get -o Acquire::ForceIPv4=true update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends python3 nodejs npm procps
 
-    - name: Create application directory
+    - name: Ensure application directory exists
       file:
-        path: /opt/deployflow
+        path: "{{ app_dir }}"
         state: directory
         mode: '0755'
 
-    - name: Copy backend files to target server
+    - name: Render production environment config from Jinja2 template
+      template:
+        src: templates/deployflow.env.j2
+        dest: "{{ app_dir }}/.env"
+        mode: '0644'
+      notify: Restart DeployFlow Service
+
+    - name: Deploy backend application artifacts
       copy:
         src: "{{ item }}"
-        dest: /opt/deployflow/
+        dest: "{{ app_dir }}/"
       loop:
         - ../app/package.json
         - ../app/server.js
+      notify: Restart DeployFlow Service
 
-    - name: Copy frontend public assets to target server
+    - name: Deploy frontend Control Plane UI assets
       copy:
         src: ../app/public
-        dest: /opt/deployflow/
+        dest: "{{ app_dir }}/"
+      notify: Restart DeployFlow Service
 
-    - name: Install Node.js dependencies
+    - name: Install production Node.js dependencies
       shell: npm config set strict-ssl false && npm install --omit=dev
       args:
-        chdir: /opt/deployflow
+        chdir: "{{ app_dir }}"
 
-    - name: Start DeployFlow Node.js server in background
+  handlers:
+    - name: Restart DeployFlow Service
       shell: |
-        pkill -x node || true
-        nohup node server.js </dev/null >/var/log/deployflow.log 2>&1 &
+        pkill -9 node 2>/dev/null || true
+        nohup node server.js >/var/log/deployflow.log 2>&1 </dev/null &
         sleep 2
         pgrep -x node
       args:
-        chdir: /opt/deployflow 
+        chdir: "{{ app_dir }}"
+
+  post_tasks:
+    - name: Verify DeployFlow /api/health returns HTTP 200
+      uri:
+        url: "http://localhost:{{ app_port }}/api/health"
+        method: GET
+        status_code: 200
